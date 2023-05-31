@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 import Cell from "./Cell";
 import "./Game.css";
@@ -35,15 +35,19 @@ const Game = () => {
   const [cells, setCells] = useState([]);
   //   console.table(boardState);
 
-  // Create cells from board
-  for (let i = 0; i < rows; i++) {
-    for (let j = 0; j < cols; j++) {
-      if (boardState[i][j]) {
-        setCells((pervCells) => [...pervCells, { i, j }]);
+  useEffect(() => {
+    // Create cells from board
+    const newCells = [];
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        if (boardState[i][j]) {
+          newCells.push({ i, j });
+        }
       }
     }
-  }
-  //   console.log(cells);
+    setCells(newCells);
+    //   console.log(cells);
+  }, [boardState]);
 
   const getElementOffset = () => {
     // console.log(boardRef.current);
@@ -70,9 +74,11 @@ const Game = () => {
     // console.log(x, y);
 
     if (x >= 0 && x <= cols && y >= 0 && y <= rows) {
-      let newArr = boardState;
-      newArr[y][x] = !newArr[y][x];
-      setBoardState(newArr);
+      setBoardState((prevBoard) => {
+        const newBoard = JSON.parse(JSON.stringify(prevBoard));
+        newBoard[y][x] = !newBoard[y][x];
+        return newBoard;
+      });
     }
     console.table(boardState);
   };
@@ -91,7 +97,6 @@ const Game = () => {
       >
         {cells.map((cell) => (
           <Cell
-            value={boardState}
             x={cell.j}
             y={cell.i}
             size={CELL_SIZE}
