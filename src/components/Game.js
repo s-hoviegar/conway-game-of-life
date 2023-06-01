@@ -1,4 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import Form from "react-bootstrap/Form";
+import Button from "react-bootstrap/Button";
+import Offcanvas from "react-bootstrap/Offcanvas";
+import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
 
 import Cell from "./Cell";
 import "./Game.css";
@@ -14,6 +20,11 @@ const rows = HEIGHT / CELL_SIZE;
 
 const Game = () => {
   const boardRef = useRef();
+  const [showControls, setShowControls] = useState(false);
+
+  const handleCloseControls = () => setShowControls(false);
+  const handleShowControls = () => setShowControls(true);
+
   //   console.log(pixelRatio);
   //   console.log(availWidth * pixelRatio);
   //   console.log(availHeight * pixelRatio);
@@ -30,9 +41,9 @@ const Game = () => {
   let newBoard = makeEmptyBoard(rows, cols);
   const [boardState, setBoardState] = useState(newBoard);
 
-  const [cells, setCells] = useState([]);
+  const [liveCells, setLiveCells] = useState([]);
   useEffect(() => {
-    // Create cells from board
+    // Create live cells from board
     const newCells = [];
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
@@ -41,28 +52,18 @@ const Game = () => {
         }
       }
     }
-    setCells(newCells);
-    //   console.log(cells);
+    setLiveCells(newCells);
+    //   console.log(liveCells);
   }, [boardState]);
 
-  const [seconds, setSeconds] = useState(1000);
+  const [seconds, setSeconds] = useState(50);
+
   const handleIntervalChange = (event) => {
-    setSeconds(event.target.value);
+    if (event.target.value !== 0) setSeconds(event.target.value);
+    else setSeconds(1);
   };
 
   const [isRunning, setIsRunning] = useState(false);
-
-  useEffect(() => {
-    let interval = null;
-    if (isRunning) {
-      interval = setInterval(() => {
-        runIteration();
-      }, seconds);
-    } else if (!isRunning) {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [isRunning, boardState]);
 
   const runGame = () => {
     setIsRunning(true);
@@ -70,10 +71,12 @@ const Game = () => {
   };
   const stopGame = () => {
     setIsRunning(false);
-    // if (timeoutHandler) {
-    //   window.clearTimeout(timeoutHandler);
-    //   timeoutHandler = null;
-    // }
+  };
+
+  const clearBoard = () => {
+    setIsRunning(false);
+    newBoard = makeEmptyBoard(rows, cols);
+    setBoardState(newBoard);
   };
 
   /**
@@ -96,7 +99,7 @@ const Game = () => {
     return neighbors;
   };
 
-  const runIteration = () => {
+  const runIteration = useCallback(() => {
     console.log("running iteration");
     let next = makeEmptyBoard(rows, cols);
 
@@ -135,7 +138,19 @@ const Game = () => {
     }
 
     setBoardState(next);
-  };
+  }, [boardState]);
+
+  useEffect(() => {
+    let interval = null;
+    if (isRunning) {
+      interval = setInterval(() => {
+        runIteration();
+      }, seconds);
+    } else if (!isRunning) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, boardState, seconds, runIteration]);
 
   const getElementOffset = () => {
     // console.log(boardRef.current);
@@ -183,7 +198,7 @@ const Game = () => {
         onClick={handleClick}
         ref={boardRef}
       >
-        {cells.map((cell) => (
+        {liveCells.map((cell) => (
           <Cell
             x={cell.j}
             y={cell.i}
@@ -192,21 +207,43 @@ const Game = () => {
           />
         ))}
       </div>
-
-      <div className="controls">
-        Update every
-        <input value={seconds} onChange={handleIntervalChange} />
-        msec
-        {isRunning ? (
-          <button className="button" onClick={stopGame}>
-            Stop
-          </button>
-        ) : (
-          <button className="button" onClick={runGame}>
-            Run
-          </button>
-        )}
-      </div>
+      <br />
+      <Container>
+        <Row>
+          <Col></Col>
+          <Col>
+            <center>
+              <Button variant="dark" onClick={handleShowControls}>
+                Show Controls
+              </Button>
+            </center>
+          </Col>
+          <Col></Col>
+        </Row>
+      </Container>
+      <Offcanvas show={showControls} onHide={handleCloseControls}>
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title>Game Of Life - Settings</Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
+          <center>
+            <Form.Label>Update every {seconds} msec</Form.Label>
+            <Form.Range value={seconds} onChange={handleIntervalChange} />
+            {isRunning ? (
+              <Button variant="outline-dark" onClick={stopGame}>
+                Stop
+              </Button>
+            ) : (
+              <Button variant="success" onClick={runGame}>
+                Run Game
+              </Button>
+            )}{" "}
+            <Button variant="outline-danger" onClick={clearBoard}>
+              Clear
+            </Button>
+          </center>
+        </Offcanvas.Body>
+      </Offcanvas>
     </div>
   );
 };
