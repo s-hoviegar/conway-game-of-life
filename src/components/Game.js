@@ -45,12 +45,24 @@ const Game = () => {
     //   console.log(cells);
   }, [boardState]);
 
-  const [interval, setInterval] = useState(100);
+  const [seconds, setSeconds] = useState(1000);
   const handleIntervalChange = (event) => {
-    setInterval(event.target.value);
+    setSeconds(event.target.value);
   };
 
   const [isRunning, setIsRunning] = useState(false);
+
+  useEffect(() => {
+    let interval = null;
+    if (isRunning) {
+      interval = setInterval(() => {
+        runIteration();
+      }, seconds);
+    } else if (!isRunning) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, boardState]);
 
   const runGame = () => {
     setIsRunning(true);
@@ -123,7 +135,6 @@ const Game = () => {
     }
 
     setBoardState(next);
-    stopGame();
   };
 
   const getElementOffset = () => {
@@ -184,7 +195,7 @@ const Game = () => {
 
       <div className="controls">
         Update every
-        <input value={interval} onChange={handleIntervalChange} />
+        <input value={seconds} onChange={handleIntervalChange} />
         msec
         {isRunning ? (
           <button className="button" onClick={stopGame}>
