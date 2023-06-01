@@ -79,6 +79,17 @@ const Game = () => {
     setBoardState(newBoard);
   };
 
+  const randomBoard = () => {
+    setIsRunning(false);
+    const newCells = makeEmptyBoard(rows, cols);
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        newCells[i][j] = Math.random() >= 0.8;
+      }
+    }
+    setBoardState(newCells);
+  };
+
   /**
    * Calculate the number of neighbors at point (x, y)
    * @param {Array} board
@@ -238,6 +249,9 @@ const Game = () => {
                 Run Game
               </Button>
             )}{" "}
+            <Button variant="outline-info" onClick={randomBoard}>
+              Randomize
+            </Button>{" "}
             <Button variant="outline-danger" onClick={clearBoard}>
               Clear
             </Button>
