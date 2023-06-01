@@ -9,32 +9,28 @@ import "./Game.css";
 const CELL_SIZE = 20;
 const WIDTH = 600;
 const HEIGHT = 400;
-const rows = HEIGHT / CELL_SIZE;
 const cols = WIDTH / CELL_SIZE;
+const rows = HEIGHT / CELL_SIZE;
 
 const Game = () => {
   const boardRef = useRef();
   //   console.log(pixelRatio);
   //   console.log(availWidth * pixelRatio);
   //   console.log(availHeight * pixelRatio);
+
   // Create an empty board
   const makeEmptyBoard = (rows, cols) => {
-    let board = [];
-    for (let i = 0; i < rows; i++) {
-      board[i] = [];
-      for (let j = 0; j < cols; j++) {
-        board[i][j] = false;
-      }
+    let board = new Array(rows);
+    for (let i = 0; i < board.length; i++) {
+      board[i] = new Array(cols);
     }
     return board;
   };
 
-  let board = makeEmptyBoard(rows, cols);
+  let newBoard = makeEmptyBoard(rows, cols);
+  const [boardState, setBoardState] = useState(newBoard);
 
-  const [boardState, setBoardState] = useState(board);
   const [cells, setCells] = useState([]);
-  //   console.table(boardState);
-
   useEffect(() => {
     // Create cells from board
     const newCells = [];
@@ -48,6 +44,87 @@ const Game = () => {
     setCells(newCells);
     //   console.log(cells);
   }, [boardState]);
+
+  const [interval, setInterval] = useState(100);
+  const handleIntervalChange = (event) => {
+    setInterval(event.target.value);
+  };
+
+  const [isRunning, setIsRunning] = useState(false);
+
+  const runGame = () => {
+    setIsRunning(true);
+    runIteration();
+  };
+  const stopGame = () => {
+    setIsRunning(false);
+    // if (timeoutHandler) {
+    //   window.clearTimeout(timeoutHandler);
+    //   timeoutHandler = null;
+    // }
+  };
+
+  /**
+   * Calculate the number of neighbors at point (x, y)
+   * @param {Array} board
+   * @param {int} x
+   * @param {int} y
+   */
+  const calculateNeighbors = (board, x, y) => {
+    let neighbors = 0;
+    for (let i = -1; i < 2; i++) {
+      for (let j = -1; j < 2; j++) {
+        let row = (x + i + rows) % rows;
+        let col = (y + j + cols) % cols;
+        // console.log("row:", row, "col:", col, "board:", board[row][col]);
+        board[row][col] && neighbors++;
+      }
+    }
+    neighbors -= board[x][y];
+    return neighbors;
+  };
+
+  const runIteration = () => {
+    console.log("running iteration");
+    let next = makeEmptyBoard(rows, cols);
+
+    // console.log(calculateNeighbors(boardState, 1, 1));
+
+    // Compute next iteration based on current board
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        let currentState = boardState[i][j];
+        // Count live neighbors!
+        let neighbors = calculateNeighbors(boardState, i, j);
+        // console.log(
+        //   "neighbors of",
+        //   i,
+        //   j,
+        //   ":",
+        //   neighbors,
+        //   "self:",
+        //   currentState
+        // );
+
+        if (currentState) {
+          if (neighbors === 2 || neighbors === 3) {
+            next[i][j] = true;
+          } else {
+            next[i][j] = false;
+          }
+        } else {
+          if (neighbors === 3) {
+            next[i][j] = true;
+          } else {
+            next[i][j] = currentState;
+          }
+        }
+      }
+    }
+
+    setBoardState(next);
+    stopGame();
+  };
 
   const getElementOffset = () => {
     // console.log(boardRef.current);
@@ -80,7 +157,7 @@ const Game = () => {
         return newBoard;
       });
     }
-    console.table(boardState);
+    // console.table(boardState);
   };
 
   return (
@@ -103,6 +180,21 @@ const Game = () => {
             key={`${cell.i},${cell.j}`}
           />
         ))}
+      </div>
+
+      <div className="controls">
+        Update every
+        <input value={interval} onChange={handleIntervalChange} />
+        msec
+        {isRunning ? (
+          <button className="button" onClick={stopGame}>
+            Stop
+          </button>
+        ) : (
+          <button className="button" onClick={runGame}>
+            Run
+          </button>
+        )}
       </div>
     </div>
   );
