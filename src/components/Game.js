@@ -21,9 +21,12 @@ const rows = HEIGHT / CELL_SIZE;
 const Game = () => {
   const boardRef = useRef();
   const [showControls, setShowControls] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawMode, setDrawMode] = useState(true);
 
   const handleCloseControls = () => setShowControls(false);
   const handleShowControls = () => setShowControls(true);
+  const changeDrawMode = () => setDrawMode((pervState) => !pervState);
 
   //   console.log(pixelRatio);
   //   console.log(availWidth * pixelRatio);
@@ -56,7 +59,7 @@ const Game = () => {
     //   console.log(liveCells);
   }, [boardState]);
 
-  const [seconds, setSeconds] = useState(50);
+  const [seconds, setSeconds] = useState(75);
 
   const handleIntervalChange = (event) => {
     if (event.target.value !== 0) setSeconds(event.target.value);
@@ -176,7 +179,9 @@ const Game = () => {
     };
   };
 
-  const handleClick = (event) => {
+  const handleMouseDown = (event) => {
+    stopGame();
+    setIsDrawing(true);
     const elemOffset = getElementOffset();
     // console.log(elemOffset);
     const offsetX = event.clientX - elemOffset.x;
@@ -190,11 +195,38 @@ const Game = () => {
     if (x >= 0 && x <= cols && y >= 0 && y <= rows) {
       setBoardState((prevBoard) => {
         const newBoard = JSON.parse(JSON.stringify(prevBoard));
-        newBoard[y][x] = !newBoard[y][x];
+        newBoard[y][x] = drawMode;
         return newBoard;
       });
     }
     // console.table(boardState);
+  };
+
+  const handleMouseMove = (event) => {
+    if (!isDrawing) {
+      return;
+    }
+    const elemOffset = getElementOffset();
+    // console.log(elemOffset);
+    const offsetX = event.clientX - elemOffset.x;
+    // console.log(offsetX);
+    const offsetY = event.clientY - elemOffset.y;
+
+    const x = Math.floor(offsetX / CELL_SIZE);
+    const y = Math.floor(offsetY / CELL_SIZE);
+    // console.log(x, y);
+
+    if (x >= 0 && x <= cols && y >= 0 && y <= rows) {
+      setBoardState((prevBoard) => {
+        const newBoard = JSON.parse(JSON.stringify(prevBoard));
+        newBoard[y][x] = drawMode;
+        return newBoard;
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDrawing(false);
   };
 
   return (
@@ -206,7 +238,9 @@ const Game = () => {
           height: HEIGHT,
           backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
         }}
-        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         ref={boardRef}
       >
         {liveCells.map((cell) => (
@@ -226,6 +260,9 @@ const Game = () => {
             <center>
               <Button variant="dark" onClick={handleShowControls}>
                 Show Controls
+              </Button>{" "}
+              <Button variant="outline-secondary" onClick={changeDrawMode}>
+                {drawMode ? "Draw" : "Erase"}
               </Button>
             </center>
           </Col>
