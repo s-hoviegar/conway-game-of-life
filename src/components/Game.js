@@ -114,7 +114,7 @@ const Game = () => {
   };
 
   const runIteration = useCallback(() => {
-    console.log("running iteration");
+    // console.log("running iteration");
     let next = makeEmptyBoard(rows, cols);
 
     // console.log(calculateNeighbors(boardState, 1, 1));
